@@ -1,5 +1,15 @@
 const TOKEN_KEY = 'tn_token'
 
+export class ApiError extends Error {
+  status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
 }
@@ -39,7 +49,7 @@ export async function api<T>(
       typeof data === 'object' && data && 'detail' in data
         ? String((data as { detail: unknown }).detail)
         : `请求失败 (${res.status})`
-    throw new Error(detail)
+    throw new ApiError(res.status, detail)
   }
   return data as T
 }

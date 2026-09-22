@@ -46,11 +46,25 @@ docker compose up --build
 3. **Pond 育苗塘**：`hatcheryId`、`pondCode`、`species`、`volumeM3`、`status(stocked|dry|quarantine)`；同场 `pondCode` 唯一
 4. **WaterSample 水质样**：`pondId`、`sampledAt`、`tempC`、`salinityPpt`、`doMgL`、`ph`、`notes`；`doMgL > 0` 且 `ph ∈ [6,9]`，否则返回 **400**
 5. **FeedEvent 投喂**：`pondId`、`fedAt`、`feedType`、`amountKg`、`operatorName`
-6. **Dashboard**：塘总数、quarantine 数、近 24h 采样数、近 7 日投喂总量 kg
+6. **FeedWindow 投喂窗口**：`pondId`、`startAt`、`endAt`、`enabled`
+7. **Dashboard**：塘总数、quarantine 数、近 24h 采样数、近 7 日投喂总量 kg
+
+### 投喂窗口与溶氧规则
+
+投喂登记（`POST /api/feed-events`）在后端强制两道校验，**顺序固定、先窗口后溶氧**，前端不做禁用按钮之类的纯前端拦截：
+
+1. **窗口校验**：投喂时刻 `fedAt` 必须被该塘口一条**启用中**的窗口闭区间覆盖（`startAt ≤ fedAt ≤ endAt`）。不存在覆盖窗口时返回 **409** `投喂时刻不在该塘口的启用投喂窗口内，禁止投喂`。
+2. **溶氧校验**（仅窗口通过后执行）：该塘口在 `[fedAt - 6h, fedAt]` 内必须存在水质样，且最近一条 `doMgL ≥ 5`。无样或溶氧不足时返回 **400**，正文区分「6 小时内无水质样」与「溶解氧低于 5 mg/L」。
+
+窗口管理规则：
+
+- 同一塘口窗口时间轴**相交（含边界相接的时间重叠判断）即拒绝**，返回 **409** `同塘口投喂窗口时间相交`；停用窗口也参与相交判断，避免重新启用后产生重叠。不同塘口窗口互不影响。
+- `GET /api/feed-windows/open` 返回当前时刻处于启用状态的窗口；塘口列表 `GET /api/ponds` 每行带 `inFeedWindow`，口径与该接口完全一致（每个开窗塘口一行 ↔ open 中该塘口一条）。
+- 种子数据为 B-01 塘准备了一条覆盖当前时刻的启用窗口，但其最近水质样在 10 小时前：此时对 B-01 登记投喂会得到窗口通过、溶氧 **400** 的失败结果，可直接验证规则。
 
 ## 前端页面
 
-Login · Dashboard · Hatcheries · Ponds · WaterSamples · FeedEvents
+Login · Dashboard · Hatcheries · Ponds · WaterSamples · FeedWindows · FeedEvents
 
 ## 本地开发（可选）
 

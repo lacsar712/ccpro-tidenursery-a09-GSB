@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react'
-import { api } from '../api/client'
+import { ApiError, api } from '../api/client'
 import type { FeedEvent, Pond } from '../types'
 
 function nowLocal() {
@@ -52,7 +52,13 @@ export default function FeedEvents() {
       setForm((f) => ({ ...empty, pondId: f.pondId, fedAt: nowLocal() }))
       await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : '保存失败')
+      setError(
+        err instanceof ApiError
+          ? `[${err.status}] ${err.message}`
+          : err instanceof Error
+            ? err.message
+            : '保存失败',
+      )
     }
   }
 
@@ -75,7 +81,10 @@ export default function FeedEvents() {
     <div>
       <header className="page-header">
         <h1>投喂事件</h1>
-        <p className="muted">记录饵料类型、投喂量与操作人</p>
+        <p className="muted">
+          登记饵料类型、投喂量与操作人。投喂须由后端校验：投喂时刻必须落在启用投喂窗口内（否则 409）；
+          窗口内还须投喂前 6 小时内有溶解氧 ≥ 5 mg/L 的水质样（否则 400）。
+        </p>
       </header>
       {error && <div className="error">{error}</div>}
 

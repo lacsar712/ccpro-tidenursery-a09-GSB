@@ -19,6 +19,15 @@ export type Pond = {
   species: string
   volumeM3: number
   status: 'stocked' | 'dry' | 'quarantine'
+  inFeedWindow: boolean
+}
+
+export type FeedWindow = {
+  id: number
+  pondId: number
+  startAt: string
+  endAt: string
+  enabled: boolean
 }
 
 export type WaterSample = {

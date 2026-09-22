@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from app.auth import hash_password
 from app.database import SessionLocal
 from app.models.feed_event import FeedEvent
+from app.models.feed_window import FeedWindow
 from app.models.hatchery import Hatchery
 from app.models.pond import Pond
 from app.models.user import User
@@ -126,6 +127,14 @@ def seed() -> None:
                         feed_type="微藻饲料",
                         amount_kg=2.5,
                         operator_name="水质技术员",
+                    ),
+                    # 唯一启用投喂窗：B-01 当前正在开窗，但其最近水质样在 10 小时前。
+                    # 此时对 B-01 登记投喂：窗口校验通过、溶氧校验因 6 小时内无样而 400。
+                    FeedWindow(
+                        pond_id=p3.id,
+                        start_at=now - timedelta(minutes=30),
+                        end_at=now + timedelta(hours=4),
+                        enabled=True,
                     ),
                 ]
             )

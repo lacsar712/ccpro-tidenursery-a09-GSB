@@ -64,7 +64,9 @@ export default function Ponds() {
     <div>
       <header className="page-header">
         <h1>育苗塘</h1>
-        <p className="muted">同场塘口号唯一；状态：stocked / dry / quarantine</p>
+        <p className="muted">
+          同场塘口号唯一；状态：stocked / dry / quarantine；「投喂窗」表示当前是否处于启用投喂窗口
+        </p>
       </header>
       {error && <div className="error">{error}</div>}
 
@@ -138,6 +140,7 @@ export default function Ponds() {
               <th>品种</th>
               <th>体积 m³</th>
               <th>状态</th>
+              <th>投喂窗</th>
               <th />
             </tr>
           </thead>
@@ -151,6 +154,13 @@ export default function Ponds() {
                 <td>{r.volumeM3}</td>
                 <td>
                   <span className={`badge ${r.status}`}>{r.status}</span>
+                </td>
+                <td>
+                  {r.inFeedWindow ? (
+                    <span className="badge stocked">开窗中</span>
+                  ) : (
+                    <span className="badge dry">窗口外</span>
+                  )}
                 </td>
                 <td>
                   <button className="btn ghost" onClick={() => remove(r.id)}>

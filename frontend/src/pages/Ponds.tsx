@@ -138,6 +138,7 @@ export default function Ponds() {
               <th>品种</th>
               <th>体积 m³</th>
               <th>状态</th>
+              <th>当前投喂窗</th>
               <th />
             </tr>
           </thead>
@@ -151,6 +152,11 @@ export default function Ponds() {
                 <td>{r.volumeM3}</td>
                 <td>
                   <span className={`badge ${r.status}`}>{r.status}</span>
+                </td>
+                <td>
+                  <span className={`badge ${r.inOpenWindow ? 'window-open' : 'window-closed'}`}>
+                    {r.inOpenWindow ? '窗口开放中' : '窗口关闭'}
+                  </span>
                 </td>
                 <td>
                   <button className="btn ghost" onClick={() => remove(r.id)}>

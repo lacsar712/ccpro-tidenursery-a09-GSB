@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from app.auth import hash_password
 from app.database import SessionLocal
 from app.models.feed_event import FeedEvent
+from app.models.feed_window import FeedWindow
 from app.models.hatchery import Hatchery
 from app.models.pond import Pond
 from app.models.user import User
@@ -128,6 +129,18 @@ def seed() -> None:
                         operator_name="水质技术员",
                     ),
                 ]
+            )
+            # 投喂窗口：仅 B-01 一个启用窗口（覆盖当前时刻）。
+            # B-01 最近水质样在 10 小时前（超出 6 小时窗口），
+            # 因此此刻对 B-01 登记投喂会先过窗口校验、再因溶氧不足被 400 拒绝——
+            # 即预置的"无近期水质样"失败投喂场景；对其他塘口投喂则 409（无覆盖窗口）。
+            db.add(
+                FeedWindow(
+                    pond_id=p3.id,
+                    start_at=now - timedelta(hours=12),
+                    end_at=now + timedelta(hours=36),
+                    enabled=True,
+                )
             )
             db.commit()
             print("Seed data inserted.")

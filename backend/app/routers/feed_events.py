@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.database import get_db
+from app.feeding_rules import MIN_DO_MG_L, find_covering_window, find_qualifying_sample
 from app.models.feed_event import FeedEvent
 from app.models.pond import Pond
 from app.models.user import User
@@ -34,6 +35,16 @@ def create_event(
     pond = db.query(Pond).filter(Pond.id == payload.pond_id).first()
     if not pond:
         raise HTTPException(status_code=400, detail="塘口不存在")
+    # 判定顺序固定：先窗口（409），后溶氧（400）
+    if not find_covering_window(db, payload.pond_id, payload.fed_at):
+        raise HTTPException(
+            status_code=409, detail="投喂时刻不在该塘口任何启用的投喂窗口内，禁止投喂"
+        )
+    if not find_qualifying_sample(db, payload.pond_id, payload.fed_at):
+        raise HTTPException(
+            status_code=400,
+            detail=f"投喂前6小时内无溶氧≥{MIN_DO_MG_L:g} mg/L的水质样，禁止投喂",
+        )
     item = FeedEvent(
         pond_id=payload.pond_id,
         fed_at=payload.fed_at,

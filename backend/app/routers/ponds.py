@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -6,12 +7,22 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.database import get_db
+from app.feeding_rules import find_covering_window
 from app.models.hatchery import Hatchery
 from app.models.pond import Pond
 from app.models.user import User
 from app.schemas.pond import PondCreate, PondUpdate, PondOut
 
 router = APIRouter(prefix="/api/ponds", tags=["ponds"])
+
+
+def _to_out(db: Session, pond: Pond) -> PondOut:
+    """附带当前是否处于启用投喂窗（与投喂登记共用同一窗口核对规则）。"""
+    out = PondOut.model_validate(pond)
+    out.in_open_window = (
+        find_covering_window(db, pond.id, datetime.now(timezone.utc)) is not None
+    )
+    return out
 
 
 @router.get("", response_model=List[PondOut])
@@ -23,7 +34,7 @@ def list_ponds(
     q = db.query(Pond)
     if hatchery_id is not None:
         q = q.filter(Pond.hatchery_id == hatchery_id)
-    return q.order_by(Pond.id).all()
+    return [_to_out(db, p) for p in q.order_by(Pond.id).all()]
 
 
 @router.post("", response_model=PondOut, status_code=status.HTTP_201_CREATED)
@@ -49,7 +60,7 @@ def create_pond(
         db.rollback()
         raise HTTPException(status_code=400, detail="同场塘口号已存在")
     db.refresh(item)
-    return item
+    return _to_out(db, item)
 
 
 @router.get("/{pond_id}", response_model=PondOut)
@@ -61,7 +72,7 @@ def get_pond(
     item = db.query(Pond).filter(Pond.id == pond_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="塘口不存在")
-    return item
+    return _to_out(db, item)
 
 
 @router.put("/{pond_id}", response_model=PondOut)
@@ -87,7 +98,7 @@ def update_pond(
         db.rollback()
         raise HTTPException(status_code=400, detail="同场塘口号已存在")
     db.refresh(item)
-    return item
+    return _to_out(db, item)
 
 
 @router.delete("/{pond_id}", status_code=status.HTTP_204_NO_CONTENT)

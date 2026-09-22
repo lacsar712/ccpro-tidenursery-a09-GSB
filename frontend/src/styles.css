@@ -278,6 +278,16 @@ th {
   color: #1a7a6c;
 }
 
+.badge.window-open {
+  background: #e3f7f4;
+  color: #1a7a6c;
+}
+
+.badge.window-closed {
+  background: #edf0f2;
+  color: #607078;
+}
+
 .login-page {
   min-height: 100vh;
   display: grid;

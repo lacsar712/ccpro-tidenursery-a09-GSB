@@ -75,7 +75,10 @@ export default function FeedEvents() {
     <div>
       <header className="page-header">
         <h1>投喂事件</h1>
-        <p className="muted">记录饵料类型、投喂量与操作人</p>
+        <p className="muted">
+          记录饵料类型、投喂量与操作人。须处于启用投喂窗口内（否则 409），且投喂前 6
+          小时内有溶氧 ≥ 5 mg/L 的水质样（否则 400），由后端强制拦截。
+        </p>
       </header>
       {error && <div className="error">{error}</div>}
 
